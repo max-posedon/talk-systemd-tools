@@ -1,0 +1,154 @@
+\documentclass{beamer}
+\usepackage[russian,english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{verbatim}
+
+
+\begin{document}
+
+\title{Systemd Tools}
+\author{Maksim 'max\_posedon' Melnikau}
+\institute{Linux Mobile hobbyist\\World of Tanks developer}
+\date{\today}
+\frame{\titlepage}
+
+\begin{frame}[fragile]
+    \frametitle{systemctl status}
+    \begin{verbatim}
+# systemctl status NetworkManager.service -o cat -n 6
+NetworkManager.service - Network Manager
+   Loaded: loaded (/usr/lib64/systemd/system/NetworkManager.service; enabled)
+   Active: active (running) since Fri, 27 Apr 2012 21:12:48 +0300; 2 days ago
+ Main PID: 1307 (NetworkManager)
+   CGroup: name=systemd:/system/NetworkManager.service
+           |  1307 /usr/sbin/NetworkManager --no-daemon
+           | 13523 /sbin/dhclient -d -4 -sf /usr/libexec/nm-dhcp-client.action -pf /var/run/dhclient-wlan0.pid -lf /var/l...
+           | 18796 /usr/libexec/nm-openvpn-service
+           | 18798 /usr/sbin/openvpn --remote vpn.wargaming.net --comp-lzo --nobind --dev tun --proto tcp-client --port 4...
+
+<info> (tun0): writing resolv.conf to /sbin/resolvconf
+<info> Clearing nscd hosts cache.
+<info> VPN connection 'WG openvpn' (IP Config Get) complete.
+<info> Policy set 'posedon' (wlan0) as default for IPv4 routing and DNS.
+<info> VPN plugin state changed: started (4)
+Initialization Sequence Completed
+    \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{systemd-nspawn}
+    \begin{verbatim}
+# systemd-nspawn -D /media/gentoo-mobile 
+Spawning namespace container on /media/gentoo-mobile \
+(console is /dev/pts/6).
+root@gentoo-mobile ~ # ps -Af
+PID   USER     TIME   COMMAND
+    1 root       0:00 -bash
+    2 root       0:00 ps -Af
+    \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{systemd-cat}
+    \begin{verbatim}
+# systemd-cat seq 1 5           
+# systemd-journalctl -n 5       
+Apr 29 23:43:43 m_melnikau-vaio[19403]: 1
+Apr 29 23:43:43 m_melnikau-vaio[19403]: 2
+Apr 29 23:43:43 m_melnikau-vaio[19403]: 3
+Apr 29 23:43:43 m_melnikau-vaio[19403]: 4
+Apr 29 23:43:43 m_melnikau-vaio[19403]: 5
+    \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{systemd-cgtop}
+    \begin{verbatim}
+Path                                    Tasks   %CPU
+/                                         477   27.0
+/system                                     1   26.5
+/system/kdm@.service                        -   25.2
+/system/rabbitmq-server.service            44    0.7
+/system/dbus.service                       12    0.3
+/system/NetworkManager.service              4    0.2
+/system/mysqld.service                     16    0.1
+/system/avahi-daemon.service                2    0.0
+/system/console-kit-daemon.service         65      -
+/system/rtkit-daemon.service                3      -
+/system/systemd-journald.service            1      -
+/system/systemd-logind.service              1      -
+/system/udev.service                        3      -
+    \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{systemd-tmpfiles}
+    \begin{block}{x11.conf}
+    \begin{verbatim}
+# Make sure these are created by default
+# so that nobody else can
+d /tmp/.X11-unix 1777 root root 10d
+d /tmp/.ICE-unix 1777 root root 10d
+d /tmp/.XIM-unix 1777 root root 10d
+d /tmp/.font-unix 1777 root root 10d
+d /tmp/.Test-unix 1777 root root 10d
+
+# Unlink the X11 lock files
+r /tmp/.X\[0-9\]*-lock
+    \end{verbatim}
+    \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{systemd-analyze}
+    \begin{verbatim}
+# systemd-analyze blame
+  1256ms udev-trigger.service
+   554ms NetworkManager.service
+   248ms avahi-daemon.service
+   196ms systemd-logind.service
+   170ms media.mount
+   169ms systemd-vconsole-setup.service
+   155ms dev-mqueue.mount
+   141ms sys-kernel-debug.mount
+   124ms sys-kernel-config.mount
+   121ms console-kit-log-system-start.service
+   119ms remount-rootfs.service
+   110ms sys-fs-fuse-connections.mount
+   106ms systemd-sysctl.service
+   106ms dbus.service
+    \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{systemd-journalctl}
+    \begin{verbatim}
+# systemd-journalctl -o verbose _PID=11937        
+Sun, 29 Apr 2012 10:39:29 +0300 [s=bacf660eec8340c99fcc4e5a5858c8a8;i=c12;b=083530b34e7547e48fcfe7be0726fa3f;m=391c22b0a;t=4becc700d4ce7;x=91977399849a3d57;p=system.journal]
+ _TRANSPORT=syslog
+ PRIORITY=4
+ SYSLOG_FACILITY=1
+ SYSLOG_IDENTIFIER=org.kde.powerdevil.backlighthelper
+ MESSAGE=QDBusConnection: system D-Bus connection created before QCoreApplication. Application may misbehave.
+ _PID=11937
+ _UID=0
+ _GID=0
+ _COMM=backlighthelper
+ _EXE=/usr/lib64/kde4/libexec/backlighthelper
+ _CMDLINE=/usr/lib64/kde4/libexec/backlighthelper
+ _SYSTEMD_CGROUP=/system/dbus.service
+ _SYSTEMD_UNIT=dbus.service
+ _SOURCE_REALTIME_TIMESTAMP=1335685169367215
+ _BOOT_ID=083530b34e7547e48fcfe7be0726fa3f
+    \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{...}
+    \begin{itemize}
+    \item Maksim 'max\_posedon' Melnikau maxposedon@gmail.com
+    \item http://www.freedesktop.org/wiki/Software/systemd
+    \end{itemize}
+\end{frame}
+
+\end{document}
